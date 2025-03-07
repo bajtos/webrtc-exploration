@@ -1,0 +1,89 @@
+<html>
+  <head>
+    <style>
+      #offer {
+        width: 600px;
+      }
+
+      #stdin {
+        width: 400px;
+      }
+      div {
+        padding-top: 1em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Instructions</h2>
+    <ul>
+      <li>Open this page in two browser tabs (load the page from the server).</li>
+      <li>In the first tab, click "Create New Room" and copy the connection string printed.</li>
+      <li>
+        In the second tab, paste the connection string, click "Connect" and copy the new connection
+        string printed.
+      </li>
+      <li>In the first tab, paste the connection string and click "Connect".</li>
+      <li>Wait for the message "Connection established".</li>
+      <li>Now your two tabs can exchange messages with each other.</li>
+    </ul>
+    <hr />
+    <div>
+      <button id="new-room">Create New Room</button>
+    </div>
+    <div>
+      Connection Offer:<br />
+      <textarea id="offer"></textarea>
+      <br />
+      <button id="connect">Connect</button>
+    </div>
+    <div>
+      Message: <input id="stdin" type="text" onchange="document.getElementById('send').click()" />
+      <button id="send">Send</button>
+    </div>
+
+    <pre id="console"></pre>
+    <script type="module">
+      import { connect, createNewRoom, sendMessage } from "./chat.js";
+
+      const originalLog = console.log;
+      console.log = function (format, ...args) {
+        originalLog(format, ...args);
+        let message;
+        if (typeof format === "string") {
+          message = format.replace(/%[sidfo]/g, () => args.shift());
+        } else {
+          message = "" + format;
+        }
+        message += args.map((a) => " " + a).join("");
+        document.getElementById("console").textContent += message + "\n";
+      };
+
+      const sendButton = document.getElementById("send");
+      sendButton.addEventListener("click", () => {
+        const stdin = document.getElementById("stdin");
+        console.log(">", stdin.value);
+        sendMessage(stdin.value);
+        stdin.value = "";
+      });
+
+      const newRoomButton = document.getElementById("new-room");
+      newRoomButton.addEventListener("click", () => {
+        (async () => {
+          await createNewRoom();
+          console.log("Awaiting connection...");
+        })().catch((err) => console.log(err));
+      });
+
+      const offerInput = document.getElementById("offer");
+      const connectButton = document.getElementById("connect");
+      connectButton.addEventListener("click", () => {
+        const offerId = offerInput.value;
+        connect(offerId).then(
+          () => console.log("Connection established successfully"),
+          (err) => console.log("Connection failed:", err),
+        );
+      });
+    </script>
+  </body>
+</html>
